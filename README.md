@@ -320,6 +320,13 @@ networks:
   INTERNET:
 ```
 
+🌞 Le fichier README.md doit contenir des instructions simples sur le lancement de l'application avec docker-compose, et une explication succinte des différents composants
+
+Ces fichier est disponible dans le dossier des exos :
+
+- **cloud_b3/docker-compose/writeyourown/**
+- **cloud_b3/docker-compose/pythonapp/**
+
 ### Conteneuriser une application donnée
 
 🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞

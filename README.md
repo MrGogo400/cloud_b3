@@ -164,24 +164,21 @@ docker build :
 ```shell=
 [centos@localhost pythonwebserver]$ docker build -t python-web .
 Sending build context to Docker daemon 3.072 kB
-Step 1/7 : FROM alpine:latest
+Step 1/6 : FROM alpine:latest
  ---> 389fef711851
-Step 2/7 : RUN apk add python3
+Step 2/6 : RUN apk add python3
  ---> Using cache
  ---> 1baf0b550a1c
-Step 3/7 : EXPOSE 8888:8888
+Step 3/6 : EXPOSE 8888:8888
  ---> Using cache
  ---> cfad39013ae5
-Step 4/7 : WORKDIR /http/webserver/
+Step 4/6 : WORKDIR /http/webserver/
  ---> Using cache
  ---> 188f90b4d0d4
-Step 5/7 : COPY index.html .
+Step 5/6 : COPY index.html .
  ---> Using cache
  ---> 86bfe68b9bb9
-Step 6/7 : CMD python -v
- ---> Using cache
- ---> 0175ead4bb38
-Step 7/7 : CMD python3 -m http.server 8888
+Step 6/6 : CMD python3 -m http.server 8888
  ---> Using cache
  ---> 0f2d7c57344c
 Successfully built 0f2d7c57344c

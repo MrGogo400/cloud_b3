@@ -1,0 +1,16 @@
+version: "3.3"
+
+services:
+  server:
+    image: nginx
+    networks:
+      nginx-net:
+        aliases:
+          - nginx.test
+          - nginx
+    ports:
+      - "8080:80"
+
+networks:
+  nginx-net:
+

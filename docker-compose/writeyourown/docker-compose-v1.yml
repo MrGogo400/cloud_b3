@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+  server:
+    build: ./webserver
+    networks:
+      python-net:
+        aliases:
+          - python-web
+    ports:
+      - "80:8888"
+
+networks:
+  python-net:
+

@@ -1,0 +1,7 @@
+FROM alpine:latest
+RUN apk add python3
+EXPOSE 8888:8888
+WORKDIR /http/webserver/
+COPY index.html .
+CMD ["python -v"]
+CMD ["python3", "-m", "http.server", "8888"]

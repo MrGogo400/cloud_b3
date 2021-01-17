@@ -1,0 +1,21 @@
+<h1>Add key</h1>
+<form action="{{ url_for('add') }}" method = "POST">
+
+Key:
+<input type="text" name="key" >
+
+Value:
+<input type="text" name="value" >
+
+<input type="submit" value="Submit">
+</form>
+
+<h1>Check key</h1>
+<form action="{{ url_for('get') }}" method = "POST">
+
+Key:
+<input type="text" name="key" >
+<input type="submit" value="Submit">
+</form>
+
+Host : {{ container_hostname }}

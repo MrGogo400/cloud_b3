@@ -1,0 +1,31 @@
+version: "3.3"
+
+services:
+  db:
+    image: redis
+    networks:
+      INTERNET:
+        aliases:
+          - db
+  reverse-proxy:
+    image: nginx
+    volumes:
+      - ./nginx/conf.d/nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - ./nginx/certs/:/certs/
+    networks:
+      INTERNET:
+        aliases:
+          - reverse
+    depends_on:
+      - app
+    ports:
+      - 443:443
+  app:
+    build: ./webserver
+    networks:
+      INTERNET:
+        aliases:
+          - python
+
+networks:
+  INTERNET:

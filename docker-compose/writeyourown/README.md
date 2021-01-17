@@ -1,5 +1,5 @@
 
-###koman sa fonktione : 
+### koman sa fonktione : 
 
 Les commandes à executer dans l'ordre dans la racine du projet : 
 

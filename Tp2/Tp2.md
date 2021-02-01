@@ -55,36 +55,35 @@ Vagrant.configure("2") do |config|
         libvirt.storage :file, :size => "5G"
     end
 
-	config.vm.box = "centos/7"
-	# Exec Shell in Vm
-	config.vm.provision "shell", inline: $global_config
+    config.vm.box = "centos/7"
+    # Exec Shell in Vm
+    config.vm.provision "shell", inline: $global_config
     config.vm.provision "firewall", type: "shell", privileged: true, path: "script/firewall.sh"
     config.vm.provision "disk", type: "shell", privileged: true, path: "script/disk.sh"
     config.vm.provision "docker", type: "shell", privileged: true, path: "script/dock.sh"
 
-	config.vm.define "node1", primary: true do |node1|
-		node1.vm.box = "centos/7"
+    config.vm.define "node1", primary: true do |node1|
+        node1.vm.box = "centos/7"
     	node1.vm.hostname = "node1"
-		node1.vm.network "private_network", ip: "192.168.42.10"
-	end
-
-	config.vm.define "node2" do |node2|
-		node2.vm.box = "centos/7"
-    	node2.vm.hostname = "node2"
-		node2.vm.network "private_network", ip: "192.168.42.20"
+	node1.vm.network "private_network", ip: "192.168.42.10"
     end
 
-	config.vm.define "node3" do |node3|
-       
+    config.vm.define "node2" do |node2|
+	node2.vm.box = "centos/7"
+    	node2.vm.hostname = "node2"
+	node2.vm.network "private_network", ip: "192.168.42.20"
+    end
+
+    config.vm.define "node3" do |node3|
         # pop special stockage
         node3.vm.provider :libvirt do |libvirt|
             libvirt.storage :file, :size => "10G"
         end
 
-		node3.vm.box = "centos/7"
+	node3.vm.box = "centos/7"
     	node3.vm.hostname = "node3"
-		node3.vm.network "private_network", ip: "192.168.42.30"
-	end
+	node3.vm.network "private_network", ip: "192.168.42.30"
+    end
 
 end
 ```

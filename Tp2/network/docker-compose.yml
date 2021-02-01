@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:v2.3.4
+    command:
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik"
+      # Enable Dashboard
+      - "--api.dashboard=true"
+      # Define endpoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.webtls.address=:443"
+      # Let's encrypt ACME config
+      - "--certificatesresolvers.letsencryptresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencryptresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencryptresolver.acme.email=anyway@email.com"
+      - "--certificatesresolvers.letsencryptresolver.acme.storage=/letsencrypt/acme.json"
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=webtls"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/letsencrypt
+    networks:
+      - traefik
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.traefik.rule=Host(`<DASHBOARD_URL>`)"
+        - "traefik.http.routers.traefik.entrypoints=webtls"
+        - "traefik.http.routers.traefik.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.traefik.service=api@internal"
+        - "traefik.http.services.traefik.loadbalancer.server.port=888"
+volumes:
+  certs:
+networks:
+  traefik:
+    external: true
+

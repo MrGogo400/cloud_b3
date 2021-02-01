@@ -3,12 +3,102 @@ Simon Laborde
 Hugo Marques
 Thomas Dumont
 
+# Sommaire
+
+* [I. Lab setup](#i-lab-setup)
+* [II. Mise en place de Docker Swarm](#ii-mise-en-place-de-docker-swarm)
+    * [1. Setup](#1-setup)
+    * [2. Une première application orchestrée](#2-une-première-application-orchestrée)
+* [III. Construction de l'écosystème](#iii-construction-de-lécosystème)
+    * [1. Registre](#1-registre)
+    * [2. Centraliser l'accès aux services](#2-centraliser-laccès-aux-services)
+    * [3. Swarm Management WebUI](#3-swarm-management-webui)
+    * [4. Stockage S3](#4-stockage-s3)
+
+
+# I. Lab setup
+
+Pour ce Tp nous avons 3 Vm qui seront monté sur des Vagants, voici les Ip : 
+| Name  | IP |
+|-------|----|
+| node1 | `192.168.42.10` |
+| node2 | `192.168.42.20` |
+| node3 | `192.168.42.30` |
+
+<details><summary>Vagrantfile</summary>
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+### Variable ###
+
+$global_config = <<-"EOF"
+yum upgrade -y
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install tmux vim bind-utils epel-release wget lvm2 docker-ce docker-compose docker-ce-cli containerd.io yum-utils -y
+sed -i 's/=enforcing/=permissive/g' /etc/selinux/config
+setenforce 0
+EOF
+
+
+### Conf Vm ###
+
+Vagrant.configure("2") do |config|
+
+    # Config Libvirtd Property    
+    config.vm.provider :libvirt do |libvirt|
+   	    libvirt.memory = 2048
+        libvirt.cpus = 2
+        libvirt.keymap = "en-us"
+        libvirt.machine_arch = "x86_64"
+        libvirt.storage :file, :size => "5G"
+    end
+
+	config.vm.box = "centos/7"
+	# Exec Shell in Vm
+	config.vm.provision "shell", inline: $global_config
+    config.vm.provision "firewall", type: "shell", privileged: true, path: "script/firewall.sh"
+    config.vm.provision "disk", type: "shell", privileged: true, path: "script/disk.sh"
+    config.vm.provision "docker", type: "shell", privileged: true, path: "script/dock.sh"
+
+	config.vm.define "node1", primary: true do |node1|
+		node1.vm.box = "centos/7"
+    	node1.vm.hostname = "node1"
+		node1.vm.network "private_network", ip: "192.168.42.10"
+	end
+
+	config.vm.define "node2" do |node2|
+		node2.vm.box = "centos/7"
+    	node2.vm.hostname = "node2"
+		node2.vm.network "private_network", ip: "192.168.42.20"
+    end
+
+	config.vm.define "node3" do |node3|
+       
+        # pop special stockage
+        node3.vm.provider :libvirt do |libvirt|
+            libvirt.storage :file, :size => "10G"
+        end
+
+		node3.vm.box = "centos/7"
+    	node3.vm.hostname = "node3"
+		node3.vm.network "private_network", ip: "192.168.42.30"
+	end
+
+end
+```
+
+</details>
+
+Tout les scripts appelé au démarrage des vms sont disponible [ici](./script). 
+
 ## II. Mise en place de Docker Swarm
 ### 1. Setup
 
 *  Créer votre cluster Swarm et faire que les 3 machines soient des managers :
 
-```
+```bash
 [vagrant@node1 web-pip]$ docker node ls
 ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
 tuxbb6kha541xpteeot1nw4rb *   node1      Ready     Active         Leader           20.10.2
@@ -16,15 +106,11 @@ s09vxpzqvx558jvd53d89vjkq     node2      Ready     Active         Reachable     
 k30m84swvyty34a2jtuxe9pke     node3      Ready     Active         Reachable        20.10.2
 ```
 
-
-
-
-
 ### 2. Une première application orchestrée
 
 * "swarmiser" l'application Python du TP1 :
 
-```
+```yaml
 version: "3.7"
 
 services:
@@ -50,7 +136,7 @@ networks:
 * Explorer l'application et les fonctionnalités de Swarm :
 
     * Port exposé :
-    ```
+    ```bash
     LISTEN     0      128          *:8888                     *:*                   users:(("docker-proxy",pid=28032,fd=4))
     ```
     
@@ -59,7 +145,7 @@ networks:
     * `curl 192.168.121.66:8888` :
         Une fois sur deux ça affiche`Host : 3a78b989e017` et l'autre fois `Host : 224594ca758c`
     * Trouver sur quels hôtes tournent les conteneurs lancés :
-        ```
+        ```bash
         [vagrant@node3 web-pip]$ docker service ps It4web_pyweb
         ID             NAME             IMAGE            NODE      DESIRED STATE   CURRENT STATE           ER
         ROR     PORTS
@@ -77,13 +163,13 @@ networks:
 **Déployer un registre Docker simple**
 
 Déployez sur node1 avec une commande `docker stack` :
-```
+```bash
 wget https://gitlab.com/it4lik/b3-cloud-2020/-/raw/master/tp/2/registry/docker-compose
 sudo mkdir -p /data/registry/{data,certs,auth}
 docker stack deploy -c docker-compose.yml registry
 ```
 
-```
+```bash
 [vagrant@node1 registre]$ cat /etc/docker/daemon.json 
 {
   "hosts": ["tcp://registry.b3:5000"],
@@ -95,7 +181,7 @@ docker stack deploy -c docker-compose.yml registry
 
 Build l'image contenant l'app Python sur un noeud, en la nommant correctement pour notre registre
 
-```
+```bash
 [vagrant@node1 web-pip]$ docker build -t registry.b3:5000/python-web:latest .
 Sending build context to Docker daemon   7.68kB
 Step 1/5 : FROM python:3.7-slim
@@ -118,7 +204,7 @@ Successfully tagged registry.b3:5000/python-web:latest
 
 Pousser l'image de l'application Python
 
-```
+```bash
 [vagrant@node1 web-pip]docker push registry.b3:5000/python-web:latest
 The push refers to repository [registry.b3:5000/python-web]
 802919827711: Pushed 
@@ -133,7 +219,7 @@ latest: digest: sha256:76ee8cc18b3cf11cbff659ff77edfb9f29a2c404e4eb21a0e263383cb
 
 Adapter le docker-compose.yml de l'application Python pour utiliser l'image du registre
 
-```
+```yaml
 version: "3.7"
 
 services:
@@ -163,7 +249,7 @@ networks:
 
 Nous allons créer un réseau qui sera dédier au Traefik
 
-```
+```bash
 [vagrant@node1 ~]$ docker network ls
 NETWORK ID     NAME                    DRIVER    SCOPE
 v22e53bygwd6   It4web_pyweb            overlay   swarm
@@ -179,12 +265,12 @@ outby1x1kzcx   traefik                 overlay   swarm
 ```
 
 * Modifier le fichier pour définir un nom de domaine :
-``` 
+```yaml
 - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
 ```
 
 * Fichier hosts : 
-```
+```bash
 [vagrant@node1 traefik]$ cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 registry.b3
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
@@ -201,7 +287,7 @@ outby1x1kzcx   traefik                 overlay   swarm
 
 Une fois le reverse-proxy up nous allons créer notre service et le placer derrière le traefik 
 
-```dockerfile=
+```yaml
 version: "3"
 
 services:
@@ -233,7 +319,7 @@ networks:
 
 Bam on le deploie 
 
-```bash=
+```bash
 [vagrant@node1 web-pip]$ docker stack deploy --compose-file docker-compose.yml It4web                      
 Creating service It4web_pyweb
 Creating service It4web_redis
@@ -248,7 +334,7 @@ traefik    1          Swarm
 
 Il faudra donc modifier le docker-compose.yml fourni dans la doc :
 
-```dockerfile=
+```yaml
 version: '3.3'
 
 services:
@@ -356,7 +442,7 @@ Pour le stockage un script va s'occuper de tout, il s'exécute dès le démarrag
 
 **🌞 Préparer l'environnement :**
 
-```bash=
+```bash
 #!/bin/bash
 #set -xv
 
@@ -431,7 +517,7 @@ docker node update --label-add minio4=true node3
 
 **🌞 Déployer Minio (suite) :**
 
-```dockerfile=
+```yaml
 version: '3'
 
 services:

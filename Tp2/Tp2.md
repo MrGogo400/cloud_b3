@@ -476,16 +476,7 @@ services:
       - /minio:/export
     networks:
       - minio_distributed
-      # - traefik
     deploy:
-      # labels:
-      #   - "traefik.enable=true"
-      #   - "traefik.http.routers.minio2.rule=Host(`minio2.local`)"
-      #   - "traefik.http.routers.minio2.entrypoints=web"
-      #   - "traefik.http.services.minio2.loadbalancer.server.port=9000"
-      #   - "traefik.http.routers.minio2-tls.rule=Host(`minio2.local`)"  
-      #   - "traefik.http.routers.minio2-tls.entrypoints=webtls"
-      #   - "traefik.http.routers.minio2-tls.tls.certresolver=letsencryptresolver"
       restart_policy:
         delay: 10s
         max_attempts: 10
@@ -510,16 +501,7 @@ services:
       - /minio:/export
     networks:
       - minio_distributed
-      # - traefik
     deploy:
-      # labels:
-      #   - "traefik.enable=true"
-      #   - "traefik.http.routers.minio3.rule=Host(`minio3.b3`)"
-      #   - "traefik.http.routers.minio3.entrypoints=web"
-      #   - "traefik.http.services.minio3.loadbalancer.server.port=9000"
-      #   - "traefik.http.routers.minio3-tls.rule=Host(`minio3.b3`)"  
-      #   - "traefik.http.routers.minio3-tls.entrypoints=webtls"
-      #   - "traefik.http.routers.minio3-tls.tls.certresolver=letsencryptresolver"
       restart_policy:
         delay: 10s
         max_attempts: 10
@@ -544,16 +526,7 @@ services:
       - /minio-2:/export
     networks:
       - minio_distributed
-      # - traefik
     deploy:
-      # labels:
-      #   - "traefik.enable=true"
-      #   - "traefik.http.routers.minio4.rule=Host(`minio4.b3`)"
-      #   - "traefik.http.routers.minio4.entrypoints=web"
-      #   - "traefik.http.services.minio4.loadbalancer.server.port=9000"
-      #   - "traefik.http.routers.minio4-tls.rule=Host(`minio4.b3`)"  
-      #   - "traefik.http.routers.minio4-tls.entrypoints=webtls"
-      #   - "traefik.http.routers.minio4-tls.tls.certresolver=letsencryptresolver"
       restart_policy:
         delay: 10s
         max_attempts: 10
